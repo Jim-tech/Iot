@@ -383,6 +383,7 @@ static int cubx_add_key(char *p_key, char *p_type)
 
     key_type_file_map map[] = {
         {"NetworkKey", ZB_KEY_FILE_NAME},
+        {"LinkKey", ZB_KEY_FILE_NAME},
         {"ZigBeeGreenPowerKey", GP_KEY_FILE_NAME},
     };
 
