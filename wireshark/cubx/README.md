@@ -27,5 +27,18 @@ wireshark-3.2.5\plugins\wiretap\cubx
 - Debug
   - set PATH="%PATH%;C:\xxx\dev\wireshark\wsbuild64\run\RelwithDebInfo"
 
+# To Do  
+
+- [ ] Improve seek read speed by using:
+  - sqlite3_blob_open
+  - sqlite3_blob_reopen
+  - sqlite3_blob_bytes
+  - sqlite3_blob_read
+  - sqlite3_blob_close
+- [ ] Support channel and RSSI with a custom dissector
+- [ ] Support reading .isd file
+- [ ] Support capturing on WSTK 
+
+
 # Copyright
 leder.1983@163.com

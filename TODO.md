@@ -1,0 +1,3 @@
+- [ ] Wireshark customization
+- [ ] Z3GatewayHost example on OpenWrt
+- [ ] BLE Self-Learning
