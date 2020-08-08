@@ -3,8 +3,7 @@
 
 ****
 
-# 目前主要包括的部分:  
-- [ ] Z3Aliyun, 连接Zigbee网络到阿里云
-    - [x] [master](../../tree/master/Z3Aliyun3011) 实现一个Zigbee + WiFi的gateway，连接到阿里云
-    - [x] [RouterBridge](../../tree/RouterBridge/Z3Aliyun3011) 实现一个Zigbee router + WiFi连接到阿里云
-- [ ] To be continue
+# TODO
+- [ ] Wireshark customization
+- [ ] Z3GatewayHost example on OpenWrt
+- [ ] BLE Self-Learning
