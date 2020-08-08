@@ -255,7 +255,7 @@ int ember_CloudConnectedNotify(void *pPara)
         g_cloud_connected = true;
         emberEventControlSetDelayMS(softWdgEventControl, 8000);
 
-
+#if 0
         //add sub dev
         for (int i = 0; i < EMBER_AF_PLUGIN_DEVICE_TABLE_DEVICE_TABLE_SIZE; i++) {
             EmberAfPluginDeviceTableEntry *pentry = emberAfDeviceTableFindDeviceTableEntry(i);
@@ -276,7 +276,7 @@ int ember_CloudConnectedNotify(void *pPara)
             ipc_SendAliyunCmdCommon(IPC_ALIYUN_ADD_SUBDEV_CMD, &cmdPara, sizeof(cmdPara));
     	  }
 
-#if 0
+#elif 0
         	char *subdev_strlist[] = {"00137A0000021BA3_1",
 									  "00137A0000021BA3_2",
 									  "00137A00000298B1_1",
@@ -311,7 +311,7 @@ int ember_CloudConnectedNotify(void *pPara)
 
         		ipc_SendAliyunCmdCommon(IPC_ALIYUN_ADD_SUBDEV_CMD, &cmdPara, sizeof(cmdPara));
         	}
-#elif 0
+#elif 1
         	char *subdev_strlist[] = {"1122334455667788_1",
 									  "0000000011223344_1"};
         	int eui64[8], ep;
@@ -690,10 +690,21 @@ void custom_cmd_crash()
 void custom_cmd_showstatus()
 {
 	extern unsigned int g_heap_used;
+    extern uint32_t g_heap_alloc_failure;
+    extern uint32_t g_heap_free_failure;
+    extern uint32_t g_kv_full;
+    extern uint32_t g_kv_too_long;
+    
 	emberAfCorePrintln("g_heap_used=0x%4X", g_heap_used);
+	emberAfCorePrintln("g_heap_alloc_failure=0x%4X", g_heap_alloc_failure);
+	emberAfCorePrintln("g_heap_free_failure=0x%4X", g_heap_free_failure);
+	emberAfCorePrintln("g_kv_full=0x%4X", g_kv_full);
+	emberAfCorePrintln("g_kv_too_long=0x%4X", g_kv_too_long);
+
 	emberAfCorePrintln("wifi rx counter=0x%4X", wifi_get_rx_counter());
 	emberAfCorePrintln("wifi tx counter=0x%4X", wifi_get_tx_counter());
 	emberAfCorePrintln("g_cloud_heartbeat_cnt=0x%4X", g_cloud_heartbeat_cnt);
+
 
 }
 

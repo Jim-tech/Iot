@@ -27,6 +27,10 @@
 #define MS_TO_TICK(ms) ((ms) * OS_CFG_TICK_RATE_HZ / 1000)
 
 uint32_t g_heap_used = 0;
+uint32_t g_heap_alloc_failure = 0;
+uint32_t g_heap_free_failure = 0;
+uint32_t g_kv_full = 0;
+uint32_t g_kv_too_long = 0;
 
 
 int HAL_Snprintf(char *str, const int len, const char *fmt, ...)
@@ -69,6 +73,7 @@ void *HAL_Malloc(uint32_t size)
     uint8_t *pdata = (uint8_t *)malloc(size + 8);
     if (NULL == pdata) {
         dbg_error("not enough mem");
+        g_heap_alloc_failure++;
         return NULL;
     }
 
@@ -95,6 +100,7 @@ void HAL_Free(void *ptr)
     uint8_t *pdata = (uint8_t *)ptr;
     
     if (NULL == ptr) {
+        g_heap_free_failure++;
         return;
     }
 
@@ -103,6 +109,7 @@ void HAL_Free(void *ptr)
         || ('#' != *(uint8_t *)(pdata - 6))
         || ('!' != *(uint8_t *)(pdata - 5))) {
         dbg_error("freed an invalid mem");
+        g_heap_free_failure++;
         return;
     }
 
@@ -180,6 +187,7 @@ int HAL_Kv_Set(const char *key, const void *val, int len, int sync)
         dbg_error("key or value too long");
         dbg_error("key=%s", key);
         dbg_error("len=%d", len);
+        g_kv_too_long++;
     }
 
     while (!g_kvlist_mutex) {
@@ -222,6 +230,7 @@ int HAL_Kv_Set(const char *key, const void *val, int len, int sync)
         dbg_error("not enough kv tokens");
         dbg_error("key=%s", key);
         dbg_error("len=%d", len);
+        g_kv_full++;
     }
 
     g_kvlist_mutex = 1;
