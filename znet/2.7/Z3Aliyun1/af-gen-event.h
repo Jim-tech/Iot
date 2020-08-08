@@ -11,7 +11,6 @@
 #define EMBER_AF_GENERATED_EVENT_CODE \
   extern EmberEventControl clearWiFiEventControl; \
   extern EmberEventControl commissionEventControl; \
-  extern EmberEventControl delayRebootEventControl; \
   extern EmberEventControl emberAfPluginDeviceTableNewDeviceEventControl; \
   extern EmberEventControl emberAfPluginNetworkCreatorSecurityOpenNetworkEventControl; \
   extern EmberEventControl emberAfPluginNetworkSteeringFinishSteeringEventControl; \
@@ -21,7 +20,6 @@
   extern EmberEventControl softWdgEventControl; \
   extern void clearWiFiEventHandler(void); \
   extern void commissionEventHandler(void); \
-  extern void delayRebootEventHandler(void); \
   extern void emberAfPluginDeviceTableNewDeviceEventHandler(void); \
   extern void emberAfPluginNetworkCreatorSecurityOpenNetworkEventHandler(void); \
   extern void emberAfPluginNetworkSteeringFinishSteeringEventHandler(void); \
@@ -35,7 +33,6 @@
 #define EMBER_AF_GENERATED_EVENTS   \
   { &clearWiFiEventControl, clearWiFiEventHandler }, \
   { &commissionEventControl, commissionEventHandler }, \
-  { &delayRebootEventControl, delayRebootEventHandler }, \
   { &emberAfPluginDeviceTableNewDeviceEventControl, emberAfPluginDeviceTableNewDeviceEventHandler }, \
   { &emberAfPluginNetworkCreatorSecurityOpenNetworkEventControl, emberAfPluginNetworkCreatorSecurityOpenNetworkEventHandler }, \
   { &emberAfPluginNetworkSteeringFinishSteeringEventControl, emberAfPluginNetworkSteeringFinishSteeringEventHandler }, \
@@ -48,14 +45,13 @@
 #define EMBER_AF_GENERATED_EVENT_STRINGS   \
   "Clear wi fi event control",  \
   "Commission event control",  \
-  "Delay reboot event control",  \
   "Device Table Plugin NewDevice",  \
   "Network Creator Security Plugin OpenNetwork",  \
   "Network Steering Plugin FinishSteering",  \
   "Scan Dispatch Plugin Scan",  \
   "Update TC Link Key Plugin BeginTcLinkKeyUpdate",  \
   "Poll attr event control",  \
-  "Event data",  \
+  "Soft wdg event control",  \
 
 
 #endif // __AF_GEN_EVENT__

@@ -54,7 +54,6 @@ enable,DEBUG
 pollAttrEventControl,pollAttrEventHandler
 clearWiFiEventControl,clearWiFiEventHandler
 commissionEventControl,commissionEventHandler
-delayRebootEventControl,delayRebootEventHandler
 softWdgEventControl,softWdgEventHandler
 }
 {setupId:halOptions

@@ -34,6 +34,8 @@
 
 extern int HAL_Timer_Task_Init();
 
+#define SOFT_WDOG_TIMEOUT_LEN  90000
+
 //add heap
 static uint8_t custom_heap[0xC000]   __attribute__ ((aligned(8), used, section(".heap")));
 
@@ -70,7 +72,6 @@ static uint32_t   g_cloud_heartbeat_cnt = 0;
 EmberEventControl pollAttrEventControl;
 EmberEventControl clearWiFiEventControl;
 EmberEventControl commissionEventControl;
-EmberEventControl delayRebootEventControl;
 EmberEventControl softWdgEventControl;
 
 void emberAfPollAttrByDeviceTable()
@@ -138,6 +139,9 @@ void commissionEventHandler()
 
 void softWdgEventHandler()
 {
+    dbg_error("!!Software WDog reset 1!!");
+    dbg_error("!!Software WDog reset 2!!");
+    dbg_error("!!Software WDog reset 3!!");
     halReboot();
 }
 
@@ -235,25 +239,14 @@ int ember_HandleZigbeeCurtainCmd(void *pPara)
 	return 0;
 }
 
-void delayRebootEventHandler()
-{
-    emberEventControlSetInactive(delayRebootEventControl);
-    
-    while (1) {
-        halReboot();
-    }
-}
-
 int ember_CloudConnectedNotify(void *pPara)
 {
 	ZigbeeCloudConnectEventPara *pEvt = (ZigbeeCloudConnectEventPara *)pPara;
 
 	if (pEvt->connected) {
-        emberEventControlSetInactive(delayRebootEventControl);
-        
 		halSetLed(BOARDLED0);
         g_cloud_connected = true;
-        emberEventControlSetDelayMS(softWdgEventControl, 8000);
+        emberEventControlSetDelayMS(softWdgEventControl, SOFT_WDOG_TIMEOUT_LEN);
 
 #if 0
         //add sub dev
@@ -339,10 +332,6 @@ int ember_CloudConnectedNotify(void *pPara)
 	} else {
 		halClearLed(BOARDLED0);
         g_cloud_connected = false;
-        emberEventControlSetInactive(softWdgEventControl);
-
-        dbg_error("Cloud disconnected!");
-        emberEventControlSetDelayMS(delayRebootEventControl, 30000);
 	}
 
 	return 0;
@@ -351,7 +340,7 @@ int ember_CloudConnectedNotify(void *pPara)
 int ember_CloudHeartBeatCmd()
 {
     emberEventControlSetInactive(softWdgEventControl);
-    emberEventControlSetDelayMS(softWdgEventControl, 8000);
+    emberEventControlSetDelayMS(softWdgEventControl, SOFT_WDOG_TIMEOUT_LEN);
 
     g_cloud_heartbeat_cnt++;
     return 0;

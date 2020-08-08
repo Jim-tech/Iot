@@ -827,7 +827,7 @@ int HAL_SemaphoreWait(_IN_ void *sem, _IN_ uint32_t timeout_ms)
 	OSSemPend(sem, MS_TO_TICK(timeout_ms), OS_OPT_PEND_BLOCKING, NULL, &err);
 
 	if (RTOS_ERR_CODE_GET(err) != RTOS_ERR_NONE) {
-        dbg_error("failed");
+        dbg_error("failed code=%d timeout_ms=%d", RTOS_ERR_CODE_GET(err), timeout_ms);
 		return -1;
 	} else {
 		return 0;

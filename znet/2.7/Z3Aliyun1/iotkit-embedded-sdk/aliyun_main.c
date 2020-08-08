@@ -320,6 +320,23 @@ int aliyun_permit_join_event_handler(const char *product_key, const int time)
     return 0;
 }
 
+int aliyun_timestamp_reply_handler(const char *timestamp)
+{
+    ALIYUN_TRACE("timestamp=%s", timestamp);
+    ipc_SendZigbeeCmdCommon(IPC_ZB_CLOUD_HEARTBEAT_CMD, NULL, 0);
+    return 0;
+}
+
+int aliyun_topolist_reply_handler(const int devid, const int msgid, const int code, const char * payload, const int payload_len)
+{
+    ALIYUN_TRACE("devid=%d", devid);
+    ALIYUN_TRACE("msgid=%d", msgid);
+    ALIYUN_TRACE("code=%d", code);
+    ALIYUN_TRACE("payload=%s", payload);
+    ALIYUN_TRACE("payload_len=%d", payload_len);
+    return 0;
+}
+
 void aliyun_post_property(int devid, char *property_payload)
 {
     if (devid < 0) {
@@ -349,16 +366,19 @@ static int aliyun_initialized(const int devid)
 
 void *aliyun_dispatch_yield(void *args)
 {
+    int           ret = 0;
+    int           mscnt = 0;
     aliyun_ctx_t *aliyun_ctx = aliyun_get_ctx();
-    int mscnt = 0;
 
     while (aliyun_ctx->g_dispatch_thread_running) {
-        IOT_Linkkit_Yield(100);
+        IOT_Linkkit_Yield(128);
 
-        mscnt += 100;
-        if (mscnt >= 1000) {
-            ipc_SendZigbeeCmdCommon(IPC_ZB_CLOUD_HEARTBEAT_CMD, NULL, 0);
-            mscnt = 0;
+        mscnt += 128;
+        if (0 == (mscnt & 0xFFF)) {
+            ret = IOT_Linkkit_Query(0, ITM_MSG_QUERY_TIMESTAMP, NULL, 0);
+            if (0 != ret) {
+                ALIYUN_ERROR("Query timestamp fail");
+            }
         }
     }
 
@@ -386,6 +406,8 @@ int aliyun_connect_cloud()
     IOT_RegisterCallback(ITE_TIMESTAMP_REPLY, aliyun_timestamp_reply_event_handler);
     IOT_RegisterCallback(ITE_INITIALIZE_COMPLETED, aliyun_initialized);
     IOT_RegisterCallback(ITE_PERMIT_JOIN, aliyun_permit_join_event_handler);
+    IOT_RegisterCallback(ITE_TIMESTAMP_REPLY, aliyun_timestamp_reply_handler);
+    IOT_RegisterCallback(ITE_TOPOLIST_REPLY, aliyun_topolist_reply_handler);
 
     memset(&master_meta_info, 0, sizeof(iotx_linkkit_dev_meta_info_t));
     HAL_GetProductKey(master_meta_info.product_key);
