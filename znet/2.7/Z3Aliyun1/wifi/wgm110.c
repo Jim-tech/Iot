@@ -66,6 +66,7 @@ typedef enum
     WLAN_OPER_SET_AP_SRV,
     WLAN_OPER_START_AP,
     WLAN_OPER_STOP_AP,
+    WLAN_OPER_HELLO,
 }WLAN_REQ_TYPE;
 
 
@@ -459,6 +460,10 @@ void wifi_task(void *para)
         switch(BGLIB_MSG_ID(g_uartrx_buffer)) {
             case wifi_rsp_system_hello_id:
                 dbg_trace("recv %s", DESC(wifi_rsp_system_hello_id));
+                if (WLAN_OPER_HELLO == wifi_oper_ctrl.type) {
+                    wifi_oper_ctrl.error = WLAN_ERR_NONE;
+                    wifi_oper_ctrl.done = true;
+                }
                 break;
             case wifi_evt_system_boot_id:
                 dbg_trace("WiFi reset");
@@ -867,6 +872,7 @@ void wifi_task(void *para)
 
 int wifi_init(char *pssid, char *ppasswd)
 {
+    uint32_t  ms = 0;
     RTOS_ERR  err;
 
     if (0 != wifi_uart_init()) {
@@ -909,9 +915,16 @@ int wifi_init(char *pssid, char *ppasswd)
     while (true != wifi_is_running()) {
         halResetWatchdog();
         OSTimeDly(100, OS_OPT_TIME_DLY, &err);
+
+        ms += 100;
+        if (ms >= 5000) {
+            wifi_cmd_system_reset(0);
+            dbg_error("wifi init timeout");
+            return -1;
+        }
     }
 
-    dbg_trace("wifi is running");
+    dbg_print("wifi is running");
     return 0;
 }
 
@@ -1825,3 +1838,25 @@ int wifi_tcpip_multicast_join(uint32_t ipaddr)
     return ret;
 }
 
+int wifi_hello()
+{
+    int      ret = WLAN_ERR_NONE;
+    RTOS_ERR err;
+
+    OSMutexPend(&g_wifi_mutex, 0u, OS_OPT_PEND_BLOCKING, DEF_NULL, &err);
+    APP_RTOS_ASSERT_DBG((RTOS_ERR_CODE_GET(err) == RTOS_ERR_NONE), 1);
+
+    wifi_oper_ctrl.type = WLAN_OPER_HELLO;
+    wifi_oper_ctrl.error = WLAN_ERR_NONE;
+    wifi_oper_ctrl.done = false;
+    wifi_cmd_system_hello();
+
+    ret = wifi_sync_wait_done(2000);
+    if (WLAN_ERR_TIMEOUT != ret) {
+        ret = wifi_oper_ctrl.error;
+    }
+
+    OSMutexPost(&g_wifi_mutex, OS_OPT_POST_NONE, &err);
+    APP_RTOS_ASSERT_DBG((RTOS_ERR_CODE_GET(err) == RTOS_ERR_NONE), 1);
+    return ret;
+}

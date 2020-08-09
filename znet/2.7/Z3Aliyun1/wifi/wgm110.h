@@ -51,6 +51,7 @@ int wifi_stop_ap();
 bool wifi_is_ssid_valid();
 bool wifi_is_connected();
 int wifi_connect(char *pssid, char *ppasswd);
+int wifi_hello();
 
 
 #endif /* WIFI_WGM110_H_ */

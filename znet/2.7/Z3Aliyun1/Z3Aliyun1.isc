@@ -55,6 +55,7 @@ pollAttrEventControl,pollAttrEventHandler
 clearWiFiEventControl,clearWiFiEventHandler
 commissionEventControl,commissionEventHandler
 softWdgEventControl,softWdgEventHandler
+wifiCheckEventControl,wifiCheckEventHandler
 }
 {setupId:halOptions
 }

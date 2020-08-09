@@ -18,6 +18,7 @@
   extern EmberEventControl emberAfPluginUpdateTcLinkKeyBeginTcLinkKeyUpdateEventControl; \
   extern EmberEventControl pollAttrEventControl; \
   extern EmberEventControl softWdgEventControl; \
+  extern EmberEventControl wifiCheckEventControl; \
   extern void clearWiFiEventHandler(void); \
   extern void commissionEventHandler(void); \
   extern void emberAfPluginDeviceTableNewDeviceEventHandler(void); \
@@ -27,6 +28,7 @@
   extern void emberAfPluginUpdateTcLinkKeyBeginTcLinkKeyUpdateEventHandler(void); \
   extern void pollAttrEventHandler(void); \
   extern void softWdgEventHandler(void); \
+  extern void wifiCheckEventHandler(void); \
 
 
 // EmberEventData structs used to populate the EmberEventData table
@@ -40,6 +42,7 @@
   { &emberAfPluginUpdateTcLinkKeyBeginTcLinkKeyUpdateEventControl, emberAfPluginUpdateTcLinkKeyBeginTcLinkKeyUpdateEventHandler }, \
   { &pollAttrEventControl, pollAttrEventHandler }, \
   { &softWdgEventControl, softWdgEventHandler }, \
+  { &wifiCheckEventControl, wifiCheckEventHandler }, \
 
 
 #define EMBER_AF_GENERATED_EVENT_STRINGS   \
@@ -52,6 +55,7 @@
   "Update TC Link Key Plugin BeginTcLinkKeyUpdate",  \
   "Poll attr event control",  \
   "Soft wdg event control",  \
+  "Event data",  \
 
 
 #endif // __AF_GEN_EVENT__

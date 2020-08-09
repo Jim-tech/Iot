@@ -24,6 +24,7 @@
 #include "app/framework/plugin/device-table/device-table.h"
 #include "platform/emdrv/nvm3/inc/nvm3.h"
 #include "platform/emdrv/nvm3/inc/nvm3_default.h"
+#include "em_rmu.h"
 
 #include <kernel/include/os.h>
 #include "dbgprint.h"
@@ -35,6 +36,8 @@
 extern int HAL_Timer_Task_Init();
 
 #define SOFT_WDOG_TIMEOUT_LEN  90000
+#define WIFI_CHECK_INTERVAL    4000
+#define WIFI_CHECK_MAX_MISSED  5
 
 //add heap
 static uint8_t custom_heap[0xC000]   __attribute__ ((aligned(8), used, section(".heap")));
@@ -68,11 +71,13 @@ extern EmberApsFrame *emAfCommandApsFrame;
 static uint8_t    g_button1_pressed = 0;
 static bool       g_cloud_connected = false;
 static uint32_t   g_cloud_heartbeat_cnt = 0;
+static uint8_t    g_wifi_hello_missed = 0;
 
 EmberEventControl pollAttrEventControl;
 EmberEventControl clearWiFiEventControl;
 EmberEventControl commissionEventControl;
 EmberEventControl softWdgEventControl;
+EmberEventControl wifiCheckEventControl;
 
 void emberAfPollAttrByDeviceTable()
 {
@@ -139,10 +144,26 @@ void commissionEventHandler()
 
 void softWdgEventHandler()
 {
-    dbg_error("!!Software WDog reset 1!!");
-    dbg_error("!!Software WDog reset 2!!");
-    dbg_error("!!Software WDog reset 3!!");
+    dbg_error("!!Software WDog reset!!");
     halReboot();
+}
+
+void wifiCheckEventHandler()
+{
+    emberEventControlSetInactive(wifiCheckEventControl);
+    
+    if (0 != wifi_hello()) {
+        g_wifi_hello_missed++;
+    } else {
+        g_wifi_hello_missed = 0;
+    }
+
+    if (g_wifi_hello_missed >= WIFI_CHECK_MAX_MISSED) {
+        dbg_error("!!WiFi Check reset!!");
+        halReboot();
+    } else {
+        emberEventControlSetDelayMS(wifiCheckEventControl, WIFI_CHECK_INTERVAL);
+    }
 }
 
 /*
@@ -179,6 +200,8 @@ void emberAfHalButtonIsrCallback(int8u button, int8u state)
 
 void emberAfMainInitCallback(void)
 {
+    RMU_ResetControl(rmuResetSys, rmuResetModeFull);
+    
 	msgq_InitBuffer();
 
 	assert(0 == msgq_CreateMsgQ(&ZBMsgQueue, "ZBMsgQueue", 64));
@@ -413,6 +436,10 @@ void emberAfMainTickCallback(void)
         ember_CloudHeartBeatCmd();
         break;
 
+    case IPC_ZB_START_WIFI_CHECK_CMD:
+        emberEventControlSetDelayMS(wifiCheckEventControl, WIFI_CHECK_INTERVAL);
+        break;
+
 	default:
 		dbg_trace("TBD:msgCmd=%X len=%d", pMsg->msgCmd, pMsg->dataLen);
 		break;
@@ -450,6 +477,8 @@ void emberAfPluginMicriumRtosAppTask1MainLoopCallback(void *p_arg)
     if (0 != wifi_init(pdata->ssid, pdata->passwd)) {
         dbg_error("init wifi failed");
         halReboot();
+    } else {
+        ipc_SendZigbeeCmdCommon(IPC_ZB_START_WIFI_CHECK_CMD, NULL, 0);
     }
 
     if (0 == strlen(pdata->ssid)) {
