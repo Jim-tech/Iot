@@ -54,6 +54,99 @@ typedef enum
     CURTAIN_OPER_PAUSE,
 }CURTAIN_OPER_E;
 
+#define UTC_BASE_YEAR   1970
+#define MONTH_PER_YEAR  12
+#define DAY_PER_YEAR    365
+#define SEC_PER_DAY     86400
+#define SEC_PER_HOUR    3600
+#define SEC_PER_MIN     60
+
+typedef struct
+{
+    uint16_t year;
+    uint8_t  month;
+    uint8_t  day;
+    uint8_t  hour;
+    uint8_t  minute;
+    uint8_t  second;
+}rtc_time;
+
+/* days per month */
+const unsigned char g_day_per_mon[MONTH_PER_YEAR] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+/*check if is leap year  */
+static unsigned char applib_dt_is_leap_year(unsigned short year)
+{
+
+    if ((year % 400) == 0) {
+        return 1;
+    } else if ((year % 100) == 0) {
+        return 0;
+    } else if ((year % 4) == 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+static unsigned char applib_dt_last_day_of_mon(unsigned char month, unsigned short year)
+{
+    if ((month == 0) || (month > 12)) {
+        return g_day_per_mon[1] + applib_dt_is_leap_year(year);
+    }
+
+    if (month != 2) {
+        return g_day_per_mon[month - 1];
+    } else {
+        return g_day_per_mon[1] + applib_dt_is_leap_year(year);
+    }
+}
+
+static void unix_timestamp_to_rtc(long ts, rtc_time *psttime)
+{
+    rtc_time sttime;
+
+    int days = ts / SEC_PER_DAY;
+    int yearTmp = 0;
+    int dayTmp = 0;
+
+    for (yearTmp = UTC_BASE_YEAR; days > 0; yearTmp++) {
+        dayTmp = (DAY_PER_YEAR + applib_dt_is_leap_year(yearTmp));
+        if (days >= dayTmp)
+        {
+           days -= dayTmp;
+        }
+        else
+        {
+           break;
+        }
+    }
+    sttime.year = yearTmp;
+
+    int monthTmp = 0;
+    for (monthTmp = 1; monthTmp < MONTH_PER_YEAR; monthTmp++) {
+       dayTmp = applib_dt_last_day_of_mon(monthTmp, sttime.year);
+       if (days >= dayTmp) {
+           days -= dayTmp;
+       }
+       else
+       {
+           break;
+       }
+    }
+    sttime.month = monthTmp;
+
+    sttime.day = days + 1;
+
+    int secs = ts % SEC_PER_DAY;
+    sttime.hour = secs / SEC_PER_HOUR;
+    secs %= SEC_PER_HOUR;
+    sttime.minute = secs / SEC_PER_MIN;
+    sttime.second = secs % SEC_PER_MIN;
+
+    memcpy(psttime, &sttime, sizeof(rtc_time));
+    return;
+}
 
 static void *g_led_timer = NULL;
 static void aliyun_led_flashing(void *arg)
@@ -322,7 +415,30 @@ int aliyun_permit_join_event_handler(const char *product_key, const int time)
 
 int aliyun_timestamp_reply_handler(const char *timestamp)
 {
-    ALIYUN_TRACE("timestamp=%s", timestamp);
+    rtc_time sttime;
+    char     szstring[128] = {0};
+    uint64_t ts;
+
+    if (NULL != timestamp && strlen(timestamp) < sizeof(szstring)) {
+        ALIYUN_TRACE("timestamp=[%s]", timestamp);
+
+        strncpy(szstring, timestamp, strlen(timestamp)-3);
+        ALIYUN_TRACE("szstring=[%s]", szstring);
+        
+        ts = strtoull(szstring, NULL, 0);
+        ALIYUN_TRACE("ts=[%lld]", ts);
+
+        unix_timestamp_to_rtc(ts, &sttime);
+        ALIYUN_TRACE("[%4d-%02d-%02d %02d:%02d:%02d]", sttime.year, sttime.month, sttime.day,
+                                                       sttime.hour, sttime.minute, sttime.second);
+
+        /* utc 20:00:00 reset = 4:00:00 in beijing  */
+        if ((20 == sttime.hour) && (sttime.minute == 0)) {
+            ALIYUN_TRACE("!!Reset in early morning!!");
+            HAL_Reboot();
+        }
+    }
+    
     ipc_SendZigbeeCmdCommon(IPC_ZB_CLOUD_HEARTBEAT_CMD, NULL, 0);
     return 0;
 }
@@ -374,7 +490,7 @@ void *aliyun_dispatch_yield(void *args)
         IOT_Linkkit_Yield(128);
 
         mscnt += 128;
-        if (0 == (mscnt & 0xFFF)) {
+        if (0 == (mscnt & 0x1FFF)) {
             ret = IOT_Linkkit_Query(0, ITM_MSG_QUERY_TIMESTAMP, NULL, 0);
             if (0 != ret) {
                 ALIYUN_ERROR("Query timestamp fail");
