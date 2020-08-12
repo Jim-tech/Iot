@@ -54,11 +54,11 @@ typedef struct {
     unsigned int      packet_id;
 } cubx_info_t;
 
-typedef void* (*pf_uat_add_record)(uat_t* uat, const void* data, gboolean valid_rec);
-typedef uat_t* (*pf_uat_get_table_by_name)(gchar *name);
-typedef void (*pf_uat_clear)(uat_t* uat);
-typedef gboolean (*pf_uat_load)(uat_t* uat_in, const gchar *filename, char** err);
-typedef char* (*pf_get_profiles_dir)(void);
+WS_DLL_PUBLIC void* uat_add_record(uat_t *uat, const void *orig_rec_ptr, gboolean valid_rec);
+WS_DLL_PUBLIC uat_t* uat_get_table_by_name(const char* name);
+WS_DLL_PUBLIC void uat_clear(uat_t *uat);
+WS_DLL_PUBLIC gboolean uat_load(uat_t* uat_in, const gchar *filename, char** err);
+WS_DLL_PUBLIC char *get_profiles_dir(void);
 
 static gboolean cubx_read(wtap *wth, wtap_rec *rec, Buffer *buf,
                              int *err, gchar **err_info,
@@ -73,15 +73,6 @@ static gboolean cubx_read_packet(wtap *wth, FILE_T fh,
 static int          cubx_file_type_subtype;
 static uat_t       *g_p_gpkey_table_uat = NULL;
 static uat_t       *g_p_zbkey_table_uat = NULL;
-
-static HINSTANCE         g_hDllInst_libwireshark = NULL;
-static HINSTANCE         g_hDllInst_libwsutil = NULL;
-static pf_uat_add_record              g_pf_uat_add_record = NULL;
-static pf_uat_get_table_by_name       g_pf_uat_get_table_by_name = NULL;
-static pf_uat_clear                   g_pf_uat_clear = NULL;
-static pf_uat_load                    g_pf_uat_load = NULL;
-static pf_get_profiles_dir            g_pf_get_profiles_dir = NULL;
-
 
 static int cubx_dup2tempfile(wtap *wth, int *err, char tmpfname[MAX_PATH])
 {
@@ -248,32 +239,6 @@ static void cubx_readpkt_stop(cubx_info_t *cubx_info)
     cubx_info->pstatement = NULL;
 }
 
-static int cubx_init_key_dependency()
-{
-    g_hDllInst_libwireshark = LoadLibrary(_T("libwireshark.dll"));
-    g_hDllInst_libwsutil = LoadLibrary(_T("libwsutil.dll"));
-    if (NULL == g_hDllInst_libwireshark ||
-        NULL == g_hDllInst_libwsutil) {
-        dbg_print("fail");
-        return -1;
-    }
-
-    g_pf_uat_get_table_by_name = (pf_uat_get_table_by_name)GetProcAddress(g_hDllInst_libwireshark, "uat_get_table_by_name");
-    g_pf_uat_clear = (pf_uat_clear)GetProcAddress(g_hDllInst_libwireshark, "uat_clear");
-    g_pf_uat_load = (pf_uat_load)GetProcAddress(g_hDllInst_libwireshark, "uat_load");
-    g_pf_get_profiles_dir = (pf_get_profiles_dir)GetProcAddress(g_hDllInst_libwsutil, "get_profiles_dir");
-
-    if (NULL == g_pf_uat_get_table_by_name ||
-        NULL == g_pf_uat_clear ||
-        NULL == g_pf_uat_load ||
-        NULL == g_pf_get_profiles_dir) {
-        dbg_print("fail");
-        return -1;
-    }
-
-    return 0;
-}
-
 static int cubx_init_key_file()
 {
     char         *p_prof_dir = NULL;
@@ -288,12 +253,7 @@ static int cubx_init_key_file()
     FILE             *fp_prof = NULL;
     char              szline[256] = {0};
 
-    if (0 != cubx_init_key_dependency()) {
-        dbg_print("fail");
-        return -1;
-    }
-
-    p_prof_dir = g_pf_get_profiles_dir();
+    p_prof_dir = get_profiles_dir();
 
     for (int i = 0; i < sizeof(profilelist)/sizeof(const char *); i++) {
         snprintf(key_filename, sizeof(key_filename)-1, "%s_tmp", profilelist[i]);
@@ -336,13 +296,13 @@ static int cubx_deinit_key_file(gboolean update)
         snprintf(key_filename, sizeof(key_filename)-1, "%s_tmp", list[i].p_file_name);
         
         if (update) {
-            p_uat = g_pf_uat_get_table_by_name(list[i].p_uat_name);
+            p_uat = uat_get_table_by_name(list[i].p_uat_name);
             if (NULL == p_uat) {
                 dbg_print("find uat (%s) fail", list[i].p_uat_name);
                 return -1;
             } else {
-                g_pf_uat_clear(p_uat);
-                if (TRUE != g_pf_uat_load(p_uat, key_filename, &err)) {
+                uat_clear(p_uat);
+                if (TRUE != uat_load(p_uat, key_filename, &err)) {
                     dbg_print("update uat by (%s) fail err=%s", key_filename, err);
                     g_free(err);
                     return -1;

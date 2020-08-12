@@ -40,7 +40,7 @@ register_plugin_files(plugin.c
 
 add_plugin_library(cubx wiretap)
 
-target_link_libraries(cubx wiretap)
+target_link_libraries(cubx wiretap epan)
 
 install_plugin(cubx wiretap)
 
