@@ -28,10 +28,12 @@ typedef struct
     uint16_t port;
 }UDP_Addr;
 
+typedef void (*pf_wifi_hello_notify)();
+
 uint32_t wifi_get_rx_counter();
 uint32_t wifi_get_tx_counter();
 
-int wifi_init(char *pssid, char *ppasswd);
+int wifi_init(char *pssid, char *ppasswd, pf_wifi_hello_notify phook);
 int wifi_tcpip_tcp_connect_byhostname(const char *phostname, uint16_t port, uint8_t *pendpoint);
 int wifi_tcpip_tls_connect_byhostname(const char *phostname, uint16_t port, uint8_t *pendpoint);
 int wifi_tcpip_write(uint8_t endpoint, uint8_t *pdata, int len, int timeout_ms);

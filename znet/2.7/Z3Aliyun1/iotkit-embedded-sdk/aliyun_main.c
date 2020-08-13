@@ -434,6 +434,7 @@ int aliyun_timestamp_reply_handler(const char *timestamp)
 
         /* utc 20:00:00 reset = 4:00:00 in beijing  */
         if ((20 == sttime.hour) && (sttime.minute == 0)) {
+        //if ((02 == sttime.hour) && (sttime.minute == 25)) {
             ALIYUN_TRACE("!!Reset in early morning!!");
             HAL_Reboot();
         }

@@ -16,6 +16,7 @@ int ipc_SendZigbeeCmdCommon(uint8_t cmd, void *pPara, uint8_t paraSize)
 	pMsg = msgq_AllocBuffer();
 	if (NULL == pMsg) {
 		dbg_error("not enough msg buffer, cmd=%x", cmd);
+        assert(0);
 		return -1;
 	}
 
@@ -37,6 +38,7 @@ int ipc_SendAliyunCmdCommon(uint8_t cmd, void *pPara, uint8_t paraSize)
 	pMsg = msgq_AllocBuffer();
 	if (NULL == pMsg) {
 		dbg_error("not enough msg buffer, cmd=%x", cmd);
+        assert(0);
 		return -1;
 	}
 

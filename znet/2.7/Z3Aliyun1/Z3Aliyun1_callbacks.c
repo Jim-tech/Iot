@@ -36,8 +36,8 @@
 extern int HAL_Timer_Task_Init();
 
 #define SOFT_WDOG_TIMEOUT_LEN  90000
-#define WIFI_CHECK_INTERVAL    4000
-#define WIFI_CHECK_MAX_MISSED  5
+#define WIFI_CHECK_INTERVAL    2000
+#define WIFI_CHECK_MAX_MISSED  32
 
 //add heap
 static uint8_t custom_heap[0xC000]   __attribute__ ((aligned(8), used, section(".heap")));
@@ -151,13 +151,10 @@ void softWdgEventHandler()
 void wifiCheckEventHandler()
 {
     emberEventControlSetInactive(wifiCheckEventControl);
-    
-    if (0 != wifi_hello()) {
-        g_wifi_hello_missed++;
-    } else {
-        g_wifi_hello_missed = 0;
-    }
 
+    wifi_hello();
+    g_wifi_hello_missed++;
+    
     if (g_wifi_hello_missed >= WIFI_CHECK_MAX_MISSED) {
         dbg_error("!!WiFi Check reset!!");
         halReboot();
@@ -271,7 +268,7 @@ int ember_CloudConnectedNotify(void *pPara)
         g_cloud_connected = true;
         emberEventControlSetDelayMS(softWdgEventControl, SOFT_WDOG_TIMEOUT_LEN);
 
-#if 0
+#if 1
         //add sub dev
         for (int i = 0; i < EMBER_AF_PLUGIN_DEVICE_TABLE_DEVICE_TABLE_SIZE; i++) {
             EmberAfPluginDeviceTableEntry *pentry = emberAfDeviceTableFindDeviceTableEntry(i);
@@ -440,12 +437,21 @@ void emberAfMainTickCallback(void)
         emberEventControlSetDelayMS(wifiCheckEventControl, WIFI_CHECK_INTERVAL);
         break;
 
+    case IPC_ZB_WIFI_HELLO_CMD:
+        g_wifi_hello_missed = 0;
+        break;
+
 	default:
 		dbg_trace("TBD:msgCmd=%X len=%d", pMsg->msgCmd, pMsg->dataLen);
 		break;
 	}
 
 	msgq_FreeBuffer(pMsg);
+}
+
+void emberWifiHelloCmdNotify()
+{
+    ipc_SendZigbeeCmdCommon(IPC_ZB_WIFI_HELLO_CMD, NULL, 0);
 }
 
 void emberAfPluginMicriumRtosAppTask1InitCallback(void)
@@ -474,7 +480,7 @@ void emberAfPluginMicriumRtosAppTask1MainLoopCallback(void *p_arg)
     }
 
     AliyunStartCmdPara *pdata = (AliyunStartCmdPara *)(pMsg->data);
-    if (0 != wifi_init(pdata->ssid, pdata->passwd)) {
+    if (0 != wifi_init(pdata->ssid, pdata->passwd, emberWifiHelloCmdNotify)) {
         dbg_error("init wifi failed");
         halReboot();
     } else {
