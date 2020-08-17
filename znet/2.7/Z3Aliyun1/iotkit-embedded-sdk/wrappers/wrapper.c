@@ -32,7 +32,6 @@ uint32_t g_heap_free_failure = 0;
 uint32_t g_kv_full = 0;
 uint32_t g_kv_too_long = 0;
 
-
 int HAL_Snprintf(char *str, const int len, const char *fmt, ...)
 {
     va_list args;
@@ -722,7 +721,7 @@ int HAL_ThreadCreate(
             _OU_ int *stack_used)
 {
     RTOS_ERR  err;
-    int       stacksize = 4096;
+    int       stacksize = 8192;
     int       taskpri = 7;
     CPU_CHAR *taskname = "app";
     HalTaskHandle_S *phd = NULL;
@@ -739,8 +738,8 @@ int HAL_ThreadCreate(
 
     stacksize += 0x3FF;
     stacksize &= 0xFFFFFC00;
-    if (stacksize < 4096) {
-        stacksize = 4096;
+    if (stacksize < 8192) {
+        stacksize = 8192;
     }
 
     phd = HAL_MallocTaskHandle(stacksize);

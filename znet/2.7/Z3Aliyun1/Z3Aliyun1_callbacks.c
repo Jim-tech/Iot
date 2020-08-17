@@ -36,11 +36,11 @@
 extern int HAL_Timer_Task_Init();
 
 #define SOFT_WDOG_TIMEOUT_LEN  90000
-#define WIFI_CHECK_INTERVAL    2000
-#define WIFI_CHECK_MAX_MISSED  32
+#define WIFI_CHECK_INTERVAL    5000
+#define WIFI_CHECK_MAX_MISSED  16
 
 //add heap
-static uint8_t custom_heap[0xC000]   __attribute__ ((aligned(8), used, section(".heap")));
+static uint8_t custom_heap[0x10000]   __attribute__ ((aligned(8), used, section(".heap")));
 
 OS_Q    ZBMsgQueue;
 OS_Q    AliyunMsgQueue;

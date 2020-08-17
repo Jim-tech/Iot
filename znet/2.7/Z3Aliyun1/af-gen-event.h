@@ -55,7 +55,7 @@
   "Update TC Link Key Plugin BeginTcLinkKeyUpdate",  \
   "Poll attr event control",  \
   "Soft wdg event control",  \
-  "Event data",  \
+  "Wifi check event control",  \
 
 
 #endif // __AF_GEN_EVENT__

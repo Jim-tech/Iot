@@ -2,7 +2,7 @@
 #define _INFRA_CONFIG_H_
 
 #define PLATFORM_HAS_STDINT
-//#define PLATFORM_HAS_DYNMEM
+#define PLATFORM_HAS_DYNMEM
 #define PLATFORM_HAS_OS
 #define INFRA_STRING
 #define INFRA_NET
