@@ -35,12 +35,12 @@
 
 extern int HAL_Timer_Task_Init();
 
-#define SOFT_WDOG_TIMEOUT_LEN  90000
+#define SOFT_WDOG_TIMEOUT_LEN  120000
 #define WIFI_CHECK_INTERVAL    5000
-#define WIFI_CHECK_MAX_MISSED  16
+#define WIFI_CHECK_MAX_MISSED  24
 
 //add heap
-static uint8_t custom_heap[0x10000]   __attribute__ ((aligned(8), used, section(".heap")));
+static uint8_t custom_heap[0x20000]   __attribute__ ((aligned(8), used, section(".heap")));
 
 OS_Q    ZBMsgQueue;
 OS_Q    AliyunMsgQueue;
@@ -363,6 +363,8 @@ int ember_CloudHeartBeatCmd()
     emberEventControlSetDelayMS(softWdgEventControl, SOFT_WDOG_TIMEOUT_LEN);
 
     g_cloud_heartbeat_cnt++;
+
+    ipc_SendAliyunCmdCommon(IPC_ALIYUN_HEARTBEAT_CMD, NULL, 0);
     return 0;
 }
 

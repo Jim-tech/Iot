@@ -71,6 +71,8 @@ typedef struct
     uint8_t  second;
 }rtc_time;
 
+volatile static uint32_t g_heartbeat_missed_ms = 0;
+
 /* days per month */
 const unsigned char g_day_per_mon[MONTH_PER_YEAR] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
@@ -585,6 +587,10 @@ int aliyun_connect_cloud()
                 }
                 break;
 
+            case IPC_ALIYUN_HEARTBEAT_CMD:
+                g_heartbeat_missed_ms = 0;
+                break;
+
             default:
                 ALIYUN_ERROR("TBD:msgCmd=%X len=%d", pMsg->msgCmd, pMsg->dataLen);
                 break;
@@ -596,6 +602,12 @@ int aliyun_connect_cloud()
         }   
         
         HAL_SleepMs(10);
+
+        g_heartbeat_missed_ms += 10;
+        if (g_heartbeat_missed_ms > 120000) {
+            ALIYUN_ERROR("no heart beat received for 120 seconds.");
+            HAL_Reboot();
+        }
     }
 
     aliyun_ctx->g_dispatch_thread_running = 0;

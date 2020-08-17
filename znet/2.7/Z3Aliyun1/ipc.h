@@ -67,6 +67,7 @@ typedef enum
 {
 	IPC_ALIYUN_START_CMD,
 	IPC_ALIYUN_ADD_SUBDEV_CMD,
+	IPC_ALIYUN_HEARTBEAT_CMD,
 }IPCAliyunCmd;
 
 typedef struct
