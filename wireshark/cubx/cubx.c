@@ -59,6 +59,7 @@ WS_DLL_PUBLIC uat_t* uat_get_table_by_name(const char* name);
 WS_DLL_PUBLIC void uat_clear(uat_t *uat);
 WS_DLL_PUBLIC gboolean uat_load(uat_t* uat_in, const gchar *filename, char** err);
 WS_DLL_PUBLIC char *get_profiles_dir(void);
+WS_DLL_PUBLIC int wtap_name_to_encap(const char *short_name);
 
 static gboolean cubx_read(wtap *wth, wtap_rec *rec, Buffer *buf,
                              int *err, gchar **err_info,
@@ -492,7 +493,7 @@ cubx_open(wtap *wth, int *err, char **err_info)
     wth->subtype_read = cubx_read;
     wth->subtype_seek_read = cubx_seek_read;
     wth->file_type_subtype = cubx_file_type_subtype;
-    wth->file_encap = WTAP_ENCAP_IEEE802_15_4_NOFCS;
+    wth->file_encap = wtap_name_to_encap("usniffer");//WTAP_ENCAP_IEEE802_15_4_NOFCS;
     wth->file_tsprec = WTAP_TSPREC_USEC;
     wth->snapshot_length = 0;
 
@@ -510,6 +511,7 @@ cubx_read(wtap *wth, wtap_rec *rec, Buffer *buf, int *err, gchar **err_info,
              gint64 *data_offset)
 {
     cubx_info_t *cubx_info = (cubx_info_t *)wth->priv;
+    guint8      *p_buff = NULL;
 
     /*packet start from 1  */
     *data_offset = cubx_info->packet_id + 1;
@@ -551,9 +553,16 @@ cubx_read(wtap *wth, wtap_rec *rec, Buffer *buf, int *err, gchar **err_info,
     }
 
     len -= 2; //strip last two bytes as no FCS
+
+    len += 2; //add one byte channel and one byte rssi
     
     ws_buffer_assure_space(buf, len);
-    memcpy(ws_buffer_start_ptr(buf), sqlite3_column_blob(cubx_info->pstatement, 1), len);
+    p_buff = ws_buffer_start_ptr(buf);
+    memcpy(p_buff, sqlite3_column_blob(cubx_info->pstatement, 1), len);
+
+    //ch and rssi
+    p_buff[len - 2] = sqlite3_column_int(cubx_info->pstatement, 3);
+    p_buff[len - 1] = sqlite3_column_int(cubx_info->pstatement, 7);
 
     rec->rec_header.packet_header.caplen = len;
     rec->rec_header.packet_header.len = len;
@@ -574,6 +583,7 @@ cubx_seek_read(wtap *wth, gint64 seek_off, wtap_rec *rec,
     int           ret = 0;
     cubx_info_t  *cubx_info = (cubx_info_t *)wth->priv;
     unsigned int  pkt_id = (unsigned int)seek_off;
+    guint8       *p_buff = NULL;
     char          sz_sqlcmd[256] = {0};
 
     dbg_print("seek_off=%lld", seek_off);
@@ -623,8 +633,16 @@ cubx_seek_read(wtap *wth, gint64 seek_off, wtap_rec *rec,
     }
 
     len -= 2; //strip last two bytes as no FCS
+
+    len += 2; //add one byte channel and one byte rssi
+    
     ws_buffer_assure_space(buf, len);
-    memcpy(ws_buffer_start_ptr(buf), sqlite3_column_blob(cubx_info->pstatement, 1), len);
+    p_buff = ws_buffer_start_ptr(buf);
+    memcpy(p_buff, sqlite3_column_blob(cubx_info->pstatement, 1), len);
+
+    //ch and rssi
+    p_buff[len - 2] = sqlite3_column_int(cubx_info->pstatement, 3);
+    p_buff[len - 1] = sqlite3_column_int(cubx_info->pstatement, 7);
 
     rec->rec_header.packet_header.caplen = len;
     rec->rec_header.packet_header.len = len;

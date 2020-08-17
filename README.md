@@ -12,8 +12,9 @@
       - sqlite3_blob_bytes
       - sqlite3_blob_read
       - sqlite3_blob_close
-  - [ ] Display RSSI and channel 
+  - [x] Display RSSI and channel 
   - [ ] Decode .isd file
+  - [ ] Read dissector info from customized xml file
   - [ ] Capture on WSTK
 - [ ] Z3GatewayHost example on OpenWrt
 - [ ] BLE Self-Learning
