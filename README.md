@@ -14,6 +14,10 @@
       - sqlite3_blob_close
   - [x] Display RSSI and channel 
   - [ ] Decode .isd file
+    - [ ] Validate zip file
+    - [ ] Unzip
+    - [ ] Decode log file
+    - [ ] Add Key
   - [ ] Read dissector info from customized xml file
   - [ ] Capture on WSTK
 - [ ] Z3GatewayHost example on OpenWrt
