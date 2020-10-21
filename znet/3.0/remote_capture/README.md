@@ -12,7 +12,7 @@
   - [6. How It Works](#6-how-it-works)
   - [7. Projects Used](#7-projects-used)
   - [8. How to Port to Another Part](#8-how-to-port-to-another-part)
-  - [9. Special Notes](#9-special-notes)
+  - [9. Reference](#9-reference)
 </details>
 
 ********
@@ -49,15 +49,30 @@ NA
 
 ## 5. Setup ##
 ### 5.1. Device Side
+All the implementations are done on the host side. The major changes includes:
+- Add a subscribed topic `gw/<eui64>/capture` to receive the control command to enable/disable capture;
+- Add a source file to implement the remote capture feature related functions. 
+- Start a thread to handle the capture.
 
 ### 5.2. PC Side
+The PC tool is a GUI based MQTT client. The UI looks like below:
+<div align="center">
+    <img src="doc/ui.png">
+</div>
+<br>
 
+When press the button "Start", the client first connects to the MQTT broker, then publish a message to enable the capture, and subscribe the packets from topic 
+`gw/<eui64>/captureevent`.
 
+The tool will also create a pipe and start Wireshark to capture from the pipe. 
 
 ## 6. How It Works ##
-1. Join the device into a network;
-2. Setup binding between the device and the coordinator;
-3. The device should report the battery voltage when it changes.
+1. Connect the following pins between the WSTK BRD4164A and Raspberry Pi:
+    - EXP 1 to GND(P39)
+    - EXP 5 to GPIO 4(P7)
+    - EXP 7 to UART Rx(P10)
+2. Run the host+NCP program;
+3. Run the PC client and press start.
 
 ## 7. Projects Used ##
 - [Z3GatewayHostPi.sls](SimplicityStudio/Z3GatewayHostPi.sls)
@@ -68,5 +83,5 @@ NA
 ## 8. How to Port to Another Part ##
 NA
 
-## 9. Special Notes ##
-NA
+## 9. Reference ##
+- [AN1087]
