@@ -1,0 +1,2 @@
+1. Copy source code to plugins/wiretap or plugins/epan
+2. Change CMakeList.txt
