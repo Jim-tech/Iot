@@ -54,25 +54,47 @@ function pti_protocol.dissector(buffer, pinfo, tree)
 
 	local channel = buffer:range(length-3,1):bitfield(2,6)
 	
-	if (5 == protocol_id)
+	local rssi = 0
+	if (is_rx ~= 0)
 	then
+		rssi = buffer:range(length-append_len,1):int()
+	end	
+	
+	if (5 == protocol_id or 2 == protocol_id)
+	then
+		rssi = rssi - 50
 		frame_len = buffer:range(1,1):uint()
-		Dissector.get("wpan"):call(buffer(2,frame_len):tvb(),pinfo,subtree)
+		Dissector.get("wpan"):call(buffer(2,frame_len):tvb(),pinfo,tree)
 	else
 		if (3 == protocol_id)
 		then
-			if (39 == channel or 12 == channel or 0 == channel)
+			syncword_offset = length-append_len
+			if (is_rx ~= 0)
 			then
-				access_addr = ByteArray.new("D6BE898E")
-			else
-				access_addr = ByteArray.new("00000000")
+				syncword_offset = syncword_offset + 1
 			end
 			
+			sync_word = buffer(syncword_offset, 4):bytes()
 			local ble_pti_data = buffer(1,length-append_len-2):bytes()
-			ble_pti_data:prepend(access_addr)
+			ble_pti_data:prepend(sync_word)
 			local ble_tvb = ByteArray.tvb(ble_pti_data, "BLE Data")
-			Dissector.get("btle"):call(ble_tvb,pinfo,subtree)
-			-- Dissector.get("btle"):call(buffer(1,length-append_len-1):tvb(),pinfo,subtree)
+			Dissector.get("btle"):call(ble_tvb,pinfo,tree)
+			
+			-- subtree:add_le(pti_packet, buffer(syncword_offset, 4))
+			-- Dissector.get("btle"):call(sync_word,pinfo,tree)
+		
+			-- if (39 == channel or 12 == channel or 0 == channel)
+			-- then
+				-- access_addr = ByteArray.new("D6BE898E")
+			-- else
+				-- access_addr = ByteArray.new("00000000")
+			-- end
+			
+			-- local ble_pti_data = buffer(1,length-append_len-2):bytes()
+			-- ble_pti_data:prepend(access_addr)
+			-- local ble_tvb = ByteArray.tvb(ble_pti_data, "BLE Data")
+			-- Dissector.get("btle"):call(ble_tvb,pinfo,tree)
+			-- Dissector.get("btle"):call(buffer(1,length-append_len-1):tvb(),pinfo,tree)
 		else
 			subtree:add_le(pti_packet, buffer(1,length-append_len-1))
 		end
@@ -88,11 +110,11 @@ function pti_protocol.dissector(buffer, pinfo, tree)
 	subtree:add_le(pti_txrx, is_rx, pti_txrx_table[is_rx].." ("..is_rx..")")
 	if (is_rx ~= 0)
 	then
-		subtree:add_le(pti_rssi, 0-buffer:range(length-append_len,1):int())
+		subtree:add_le(pti_rssi, rssi)
 	end
 	
 	-- channel 
-	if (5 == protocol_id)
+	if (5 == protocol_id or 2 == protocol_id)
 	then
 		channel = channel + 11
 	end
@@ -161,7 +183,7 @@ function wstk_dch_protocol.dissector(buffer, pinfo, tree)
 		-- decode according to msg type
 		if (10 == msg_type_val or 41 == msg_type_val or 42 == msg_type_val)
 		then
-			pti_protocol.dissector(buffer:range(11,-1):tvb(),pinfo,subtree)
+			pti_protocol.dissector(buffer:range(11,-1):tvb(),pinfo,tree)
 		else
 			subtree:add_le(dch_data, buffer(11,-1))
 		end
